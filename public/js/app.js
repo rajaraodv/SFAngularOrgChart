@@ -110,7 +110,7 @@ function ContactListCtrl($scope, AngularForce, $location, Contact, DirectReports
     };
 
     $scope.getCurrentContactManager = function () {
-        if(!$scope.contact.ManagerId) {  //CEO
+        if($scope.contact && !$scope.contact.ManagerId) {  //CEO
             $scope.manager = null;
             return;
         }

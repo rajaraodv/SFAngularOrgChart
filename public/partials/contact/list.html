@@ -2,7 +2,7 @@
 
     <div class="container">
         <form class="form-inline">
-            <input type="text" ng-model="searchTerm" class="input-medium search-query" placeholder="Search">
+            <input type="text" ng-model="searchTerm" class="input-medium search-query" placeholder="Enter Email">
             <button ng-click="doSearch(searchString)" class="btn btn-primary">Go</button>
             <button ng-click="doCreate()" class="btn btn-default">&nbsp;+&nbsp;</button>
         </form>
@@ -25,6 +25,7 @@
         </div>
         <br/>
         <strong>{{contact.Name}}'s manager:</strong>
+
         <div ng-show="hasManager()">
             <table class="table">
                 <tr ng-click="newSearch(manager)">
