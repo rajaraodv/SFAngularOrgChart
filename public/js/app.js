@@ -19,20 +19,6 @@ angular.module('Contact', []).factory('Contact', function (AngularForceObjectFac
     return Contact;
 });
 
-angular.module('DirectReports', []).factory('DirectReports', function (AngularForceObjectFactory) {
-
-    var objDesc = {
-        type: 'User',
-        fields: ['Name', 'Id', 'Title', 'Email', 'Phone'],
-        where: "ManagerId=''",
-        orderBy: 'LastName',
-        limit: 25
-    };
-    var DirectReports = AngularForceObjectFactory(objDesc);
-
-    return DirectReports;
-});
-
 function HomeCtrl($scope, AngularForce, $location, $route) {
     $scope.authenticated = AngularForce.authenticated();
     if (!$scope.authenticated) {
@@ -61,7 +47,7 @@ function CallbackCtrl($scope, AngularForce, $location) {
     $location.path('/contacts');
 }
 
-function ContactListCtrl($scope, AngularForce, $location, Contact, DirectReports) {
+function ContactListCtrl($scope, AngularForce, $location, Contact) {
     $scope.authenticated = AngularForce.authenticated();
     if (!$scope.authenticated) {
         return $location.path('/login');
@@ -84,7 +70,7 @@ function ContactListCtrl($scope, AngularForce, $location, Contact, DirectReports
 
     $scope.hasManager = function() {
         return $scope.contact && $scope.contact.ManagerId;
-    }
+    };
 
     $scope.getImgUrl = function (contact) {
         return contact && contact.SmallPhotoUrl + "?oauth_token=" + $scope.sessionId;
@@ -97,8 +83,8 @@ function ContactListCtrl($scope, AngularForce, $location, Contact, DirectReports
     };
 
     $scope.getDirectReports = function () {
-        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email from User where ManagerId='" + $scope.contact.Id + "'";
-        DirectReports.queryWithCustomSOQL(soql, function (data) {
+        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email from User where ManagerId='" + $scope.contact.Id + "' And IsActive=TRUE";
+        Contact.queryWithCustomSOQL(soql, function (data) {
             $scope.sessionId = AngularForce.sessionId;
 
 
@@ -115,7 +101,7 @@ function ContactListCtrl($scope, AngularForce, $location, Contact, DirectReports
             return;
         }
         var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email from User where Id='" + $scope.contact.ManagerId + "'";
-        DirectReports.queryWithCustomSOQL(soql, function (data) {
+        Contact.queryWithCustomSOQL(soql, function (data) {
             $scope.sessionId = AngularForce.sessionId;
 
             $scope.manager = data.records[0];

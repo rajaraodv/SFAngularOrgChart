@@ -7,7 +7,7 @@
             <button ng-click="doCreate()" class="btn btn-default">&nbsp;+&nbsp;</button>
         </form>
 
-        <div class="span4 well" style="width:100%">
+        <div ng-show="contact" class="span4 well" style="width:100%">
             <table width="100%">
                 <tr ng-click="newSearch(contact)">
                     <td>
@@ -24,9 +24,10 @@
             </table>
         </div>
         <br/>
-        <strong>{{contact.Name}}'s manager:</strong>
 
-        <div ng-show="hasManager()">
+
+        <div ng-show="manager">
+            <strong>{{contact.Name}} Reports to:</strong>
             <table class="table">
                 <tr ng-click="newSearch(manager)">
                     <td style="width:65px">
