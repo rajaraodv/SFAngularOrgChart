@@ -9,7 +9,6 @@ angular.module('Contact', []).factory('Contact', function (AngularForceObjectFac
     var objDesc = {
         type: 'User',
         fields: ['Name', 'Id', 'SmallPhotoUrl', 'Email', 'Phone', 'Title'],
-        //where: "Email='dcarroll@salesforce.com'",
         where: '',
         limit: 1,
         soslFields: 'Email Fields'
@@ -20,18 +19,20 @@ angular.module('Contact', []).factory('Contact', function (AngularForceObjectFac
 });
 
 function HomeCtrl($scope, AngularForce, $location, $route) {
-    $scope.authenticated = AngularForce.authenticated();
-    if (!$scope.authenticated) {
-        return $location.path('/login');
-    }
-
-    $scope.logout = function () {
-        AngularForce.logout();
+    //If in visualforce, directly login
+    if (AngularForce.inVisualforce) {
+        $location.path('/login');
+    } else if(AngularForce.refreshToken) { //If web, try to relogin using refresh-token
+        AngularForce.login(function () {
+            $location.path('/contacts/' + app.INITIAL_EMAIL_FOR_ORG_CHART);
+            $scope.$apply();//Required coz sfdc uses jquery.ajax
+        });
+    } else {
         $location.path('/login');
     }
 }
 
-function LoginCtrl($scope, AngularForce) {
+function LoginCtrl($scope, AngularForce, $location) {
     $scope.login = function () {
         AngularForce.login();
     };
@@ -44,20 +45,25 @@ function LoginCtrl($scope, AngularForce) {
 
 function CallbackCtrl($scope, AngularForce, $location) {
     AngularForce.oauthCallback(document.location.href);
-    $location.path('/contacts');
+
+    //Note: Set hash to empty before setting path to /contacts to keep the url clean w/o oauth info.
+    //..coz oauth CB returns access_token in its own hash making it two hashes (1 from angular,
+    // and another from oauth)
+    $location.hash('');
+    $location.path('/contacts/' +  app.INITIAL_EMAIL_FOR_ORG_CHART);
+
 }
 
-function ContactListCtrl($scope, AngularForce, $location, Contact) {
+function ContactListCtrl($scope, AngularForce, $location, Contact, $routeParams) {
     $scope.authenticated = AngularForce.authenticated();
     if (!$scope.authenticated) {
-        return $location.path('/login');
+        return $location.path('/home');
     }
 
-    $scope.searchTerm = 'dcarroll@salesforce.com';
-
+    $scope.searchTerm = $routeParams.email || 'dcarroll@salesforce.com';
 
     $scope.findContactWithManagerId = function (contactList) {
-        if(contactList.length == 1){
+        if (contactList.length == 1) {
             return contactList[0];
         }
         for (var i = 0; i < contactList.length; i++) {
@@ -65,29 +71,30 @@ function ContactListCtrl($scope, AngularForce, $location, Contact) {
                 return contactList[i];
             }
         }
-        return;
     };
 
-    $scope.hasManager = function() {
-        return $scope.contact && $scope.contact.ManagerId;
+    $scope.hasContact = function () {
+        return $scope.contact ? true : false;
+    };
+
+    $scope.hasManager = function () {
+        return $scope.contact && $scope.contact.ManagerId ? true : false;
     };
 
     $scope.getImgUrl = function (contact) {
         return contact && contact.SmallPhotoUrl + "?oauth_token=" + $scope.sessionId;
     };
 
-    $scope.directReports = [];
 
     $scope.hasDirectReports = function () {
-        return $scope.directReports.length > 0;
+
+        return $scope.directReports && $scope.directReports.length > 0 ? true : false;
     };
 
     $scope.getDirectReports = function () {
-        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email from User where ManagerId='" + $scope.contact.Id + "' And IsActive=TRUE";
+        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email,Phone from User where ManagerId='" + $scope.contact.Id + "' And IsActive=TRUE";
         Contact.queryWithCustomSOQL(soql, function (data) {
             $scope.sessionId = AngularForce.sessionId;
-
-
             $scope.directReports = data.records;
             $scope.$apply();//Required coz sfdc uses jquery.ajax
         }, function (data) {
@@ -96,11 +103,7 @@ function ContactListCtrl($scope, AngularForce, $location, Contact) {
     };
 
     $scope.getCurrentContactManager = function () {
-        if($scope.contact && !$scope.contact.ManagerId) {  //CEO
-            $scope.manager = null;
-            return;
-        }
-        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email from User where Id='" + $scope.contact.ManagerId + "'";
+        var soql = "SELECT Name,SmallPhotoUrl,Title,ManagerId,Email,Phone from User where Id='" + $scope.contact.ManagerId + "'";
         Contact.queryWithCustomSOQL(soql, function (data) {
             $scope.sessionId = AngularForce.sessionId;
 
@@ -112,25 +115,39 @@ function ContactListCtrl($scope, AngularForce, $location, Contact) {
     };
 
     $scope.doSearch = function () {
-        var soql = "SELECT Name, SmallPhotoUrl, Title, Id, ManagerId,Email from User where Email='" + $scope.searchTerm + "'";
+        $scope.contact = null;
+        $scope.manager = null;
+        $scope.directReports = null;
+        var soql = "SELECT Name, SmallPhotoUrl, Title, Id, ManagerId,Email,Phone from User where Email='" + $scope.searchTerm + "'";
 
-        Contact.queryWithCustomSOQL(soql, function (data) {
-            $scope.sessionId = AngularForce.sessionId;
+        //SetTimeout MUST be 0.5 - 1sec (1000ms) to allow animation
+        setTimeout(function () {
+            Contact.queryWithCustomSOQL(soql, function (data) {
+                $scope.sessionId = AngularForce.sessionId;
 
+                $scope.contact = $scope.findContactWithManagerId(data.records);
 
-            $scope.contact = $scope.findContactWithManagerId(data.records);
-            $scope.$apply();//Required coz sfdc uses jquery.ajax
+                //Note: commenting $scope.$apply coz there is another $scope.$apply in Manager and/or directReports
+                //Having this causes some sluggishness in animation
+                //$scope.$apply();//Required coz sfdc uses jquery.ajax
 
-            $scope.getCurrentContactManager();
-            $scope.getDirectReports();
-        }, function (data) {
-            alert('Query Error');
-        });
+                if ($scope.contact) {
+                    if ($scope.contact.ManagerId) {
+                        $scope.getCurrentContactManager();
+                    }
+                    $scope.getDirectReports();
+                }
+            }, function (data) {
+                alert('Query Error');
+            });
+
+        }, 500);
     };
 
     $scope.newSearch = function (contact) {
-        $scope.searchTerm = contact.Email;
-        $scope.doSearch();
+        //$scope.searchTerm = contact.Email;
+       // $scope.doSearch();
+        $location.path('/contacts/' + contact.Email);
     };
 
     $scope.doView = function (contactId) {

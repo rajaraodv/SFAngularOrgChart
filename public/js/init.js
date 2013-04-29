@@ -5,6 +5,12 @@ var app = angular.module('AngularSFDemo', ['AngularForce', 'AngularForceObjectFa
 app.constant('SFConfig', getSFConfig());
 
 /**
+ * Some initial user's email to bootstrap org-chart.
+ * @type {string}
+ */
+app.INITIAL_EMAIL_FOR_ORG_CHART = 'dcarroll@salesforce.com';
+
+/**
  * Configure all the AngularJS routes here.
  */
 app.config(function ($routeProvider) {
@@ -12,7 +18,7 @@ app.config(function ($routeProvider) {
         when('/', {controller: HomeCtrl, templateUrl: 'partials/home.html'}).
         when('/login', {controller: LoginCtrl, templateUrl: 'partials/login.html'}).
         when('/callback', {controller: CallbackCtrl, templateUrl: 'partials/callback.html'}).
-        when('/contacts', {controller: ContactListCtrl, templateUrl: 'partials/contact/list.html'}).
+        when('/contacts/:email', {controller: ContactListCtrl, templateUrl: 'partials/contact/list.html'}).
         otherwise({redirectTo: '/'});
 });
 

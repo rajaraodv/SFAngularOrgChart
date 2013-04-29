@@ -58,6 +58,7 @@ app.all('/proxy/?*', function (req, res) {
     if ((!body || JSON.stringify(body) === "\"{}\"") && (typeof sfEndpoint != "string")) {
         return res.send('Request successful (but nothing to proxy to SF)');
     }
+    console.log('content-type: ' + contentType);
     request({
         url: sfEndpoint || "https://login.salesforce.com//services/oauth2/token",
         method: req.method,

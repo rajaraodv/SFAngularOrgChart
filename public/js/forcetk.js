@@ -152,7 +152,7 @@ if (forcetk.Client === undefined) {
             type: method || "GET",
             async: this.asyncAjax,
             url: (this.proxyUrl !== null) ? this.proxyUrl: url,
-            contentType: 'application/json',
+            contentType: method == "DELETE"  ? null : 'application/json',
             cache: false,
             processData: false,
             data: payload,
