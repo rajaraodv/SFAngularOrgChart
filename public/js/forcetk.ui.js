@@ -1,10 +1,22 @@
-/**
- * Created by Piotr Walczyszyn (outof.me | @pwalczyszyn)
- *
- * User: pwalczys
- * Date: 8/7/12
- * Time: 4:07 PM
- */
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//	Copyright 2012 Piotr Walczyszyn (http://outof.me | @pwalczyszyn)
+//
+//	Licensed under the Apache License, Version 2.0 (the "License");
+//	you may not use this file except in compliance with the License.
+//	You may obtain a copy of the License at
+//
+//		http://www.apache.org/licenses/LICENSE-2.0
+//
+//	Unless required by applicable law or agreed to in writing, software
+//	distributed under the License is distributed on an "AS IS" BASIS,
+//	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//	See the License for the specific language governing permissions and
+//	limitations under the License.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+
+//Updated by @rajaraodv
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -52,7 +64,7 @@
         /* RSC added proxyUrl for PHP app */
         this.client = new forcetk.Client(consumerKey, loginURL, proxyUrl);
 
-    }
+    };
 
     forcetk.ClientUI.prototype = {
 
@@ -146,10 +158,8 @@
         _authenticate: function _authenticate() {
             var that = this;
 
-            if (typeof window.device === 'undefined') {
-
+            if (typeof window.device === 'undefined') {// Open authorization url directly in current browser (i.e. no popups)
                 document.location.href = this._getAuthorizeUrl();
-
             } else if (window.plugins && window.plugins.childBrowser) { // This is PhoneGap/Cordova app
                 console.log('_authenticate phoneGap');
                 var childBrowser = window.plugins.childBrowser;
@@ -162,7 +172,6 @@
                 };
 
                 childBrowser.showWebPage(this._getAuthorizeUrl(), {showLocationBar: true, locationBarAlign: 'bottom'});
-
             } else {
                 throw new Error('Didn\'t find way to authenticate!');
             }
@@ -217,11 +226,17 @@
             var oauthResponse = {},
                 fragment = loc.split("#")[1];
 
+
             if (fragment) {
                 var nvps = fragment.split('&');
                 for (var nvp in nvps) {
                     var parts = nvps[nvp].split('=');
-                    oauthResponse[parts[0]] = decodeURIComponent(parts[1]);
+
+                    //Note some of the values like refresh_token might have '=' inside them
+                    //so pop the key(first item in parts) and then join the rest of the parts with =
+                    var key = parts.shift();
+                    var val = parts.join('=');
+                    oauthResponse[key] = decodeURIComponent(val);
                 }
             }
 
@@ -246,9 +261,7 @@
 
             }
         }
-    }
-    ;
+    };
 
     return forcetk;
-}))
-;
+}));
