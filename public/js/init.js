@@ -8,7 +8,7 @@ app.constant('SFConfig', getSFConfig());
  * Some initial user's email to bootstrap org-chart.
  * @type {string}
  */
-app.INITIAL_EMAIL_FOR_ORG_CHART = 'dcarroll@salesforce.com';
+app.INITIAL_EMAIL_FOR_ORG_CHART = 'veast@orgchart.com';
 
 /**
  * Configure all the AngularJS routes here.
